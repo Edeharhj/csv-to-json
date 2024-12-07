@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CSV/Excel to JSON Converter</title>
+    <!--Style Ginagmay-->
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      textarea {
+        width: 100%;
+        height: 200px;
+        margin-top: 10px;
+      }
+      button {
+        margin-top: 10px;
+      }
+      .error {
+        color: rgb(255, 0, 0);
+      }
+      .success {
+        color: rgb(21, 255, 0);
+      }
+    </style>
+  </head>
+  <body></body>
+</html>
+<!-- ari ko nag create ug -->
+<h1>CSV/Excel to JSON Converter</h1>
+<input type="file" id="fileInput" accept=".csv, .xlsx" />
+<button id="convertButton">Convert</button>
+<div id="message" class="error"></div>
+<textarea
+  id="jsonOutput"
+  placeholder="JSON output will appear here..."
+></textarea>
+<button id="copyButton">Copy JSON</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+<script>
+    document.getElementById('convertButton').addEventListener('click', function() {
+        const fileInput = document.getElementById('fileInput');
+        const messageDiv = document.getElementById('message');
+        const jsonOutput = document.getElementById('jsonOutput');
+        messageDiv.textContent = '';
+        jsonOutput.value = '';
+<!-- nag use ko diri ug conditional statement para dali rasad ma access if dili mao ang format sa file-->
+        if (fileInput.files.length === 0) {
+            messageDiv.textContent = 'Pag upload ug file oi!.'; 
+            <!--pwede rani diri ma ilisan-->
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const fileType = file.type;
+
+        if (fileType !== 'text/csv' && fileType !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+            messageDiv.textContent = 'di sha mugana kai di sha csv or xlsx na file';
+             <!--ma ilisan panig formal-->
+            return;
+        }
+<!--ngari nag use nakog ug JavaScript Object Notation or JSON-->
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = e.target.result;
+            let json;
+
+            if (fileType === 'text/csv') {
+                json = csvToJson(data);
+            } else {
+                json = excelToJson(data);
+            }
+
+            jsonOutput.value = JSON.stringify(json, null, 2);
+            messageDiv.textContent = 'Yown!oks na';
+            messageDiv.className = 'beriguud!!'; <!-- sorry gikapoy na gyud ko uie-->
+        };
+
+        reader.readAsBinaryString(file);
+    });
+
+    function csvToJson(csv) {
+        const lines = csv.split('\n');
+        const result = [];
+        const headers = lines[0].split(',');
+
+        for (let i = 1; i < lines.length; i++) {
+            const obj = {};
+            const currentLine = lines[i].split(',');
+
+            for (let j = 0; j < headers.length; j++) {
+                obj[headers[j].trim()] = currentLine[j] ? currentLine[j].trim() : '';
+            }
+            result.push(obj);
+        }
+        return result;
+    }
+
+    function excelToJson(data) {
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const json = {};
+        workbook.SheetNames.forEach(sheetName => {
+            const rowObject = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+            json[sheetName] = rowObject;
+        });
+        return json;
+    }
+
+    document.getElementById('copyButton').addEventListener('click', function() {
+        const jsonOutput = document.getElementById('jsonOutput');
+        jsonOutput.select();
+        document.execCommand('copyha ');
+        alert('na copy na promise');
+    });
+</script>
+
+</body>
+</html>
